@@ -39,9 +39,11 @@ def consumer(n):
 
 PRODUCERS = [Thread(target=producer, args=(i,)) for i in range(TOTAL)]
 CONSUMERS = [Thread(target=consumer, args=(i,)) for i in range(TOTAL)]
+THREADS = PRODUCERS + CONSUMERS
+random.shuffle(THREADS)
 
-for t in CONSUMERS + PRODUCERS:
+for t in THREADS:
     t.start()
 
-for t in CONSUMERS + PRODUCERS:
+for t in THREADS:
     t.join()
