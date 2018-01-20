@@ -27,6 +27,7 @@ class Lightswitch:
 
 ROOM_EMPTY = Semaphore(1)
 LIGHTSWITCH = Lightswitch(ROOM_EMPTY)
+TURNSTILE = Semaphore(1)
 
 
 def job(name):
@@ -36,15 +37,19 @@ def job(name):
 
 
 def reader(n):
+    TURNSTILE.acquire()
+    TURNSTILE.release()
     LIGHTSWITCH.lock()
     job("read {}".format(n))
     LIGHTSWITCH.unlock()
 
 
 def writer(n):
+    TURNSTILE.acquire()
     ROOM_EMPTY.acquire()
     job("write {}".format(n))
     ROOM_EMPTY.release()
+    TURNSTILE.release()
 
 
 WRITERS = [Thread(target=writer, args=(i,)) for i in range(5)]
