@@ -1,2 +1,2 @@
 # synchro
-Synchronization Puzzles solutions.
+Synchronization Puzzles
