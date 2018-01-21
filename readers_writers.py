@@ -1,3 +1,5 @@
+# Writers aren't starving.
+# At least one writer is guaranteed to enter the room before queued readers.
 import sys
 import time
 import random
@@ -10,14 +12,14 @@ class Lightswitch:
         self.mutex = Semaphore(1)
         self.semaphore = semaphore
 
-    def lock(self):
+    def on(self):
         self.mutex.acquire()
         self.n += 1
         if self.n == 1:
             self.semaphore.acquire()
         self.mutex.release()
 
-    def unlock(self):
+    def off(self):
         self.mutex.acquire()
         self.n -= 1
         if self.n == 0:
@@ -32,19 +34,23 @@ TURNSTILE = Semaphore(1)
 
 def job(name):
     sys.stdout.write('Start ' + name + '\n')
-    time.sleep(0.1)
+    time.sleep(random.random())
     sys.stdout.write('Stop ' + name + '\n')
 
 
 def reader(n):
+    time.sleep(5 * random.random())
+    sys.stdout.write('Reader ' + str(n) + ' arrived\n')
     TURNSTILE.acquire()
     TURNSTILE.release()
-    LIGHTSWITCH.lock()
+    LIGHTSWITCH.on()
     job("read {}".format(n))
-    LIGHTSWITCH.unlock()
+    LIGHTSWITCH.off()
 
 
 def writer(n):
+    time.sleep(5 * random.random())
+    sys.stdout.write('Writer ' + str(n) + ' arrived\n')
     TURNSTILE.acquire()
     ROOM_EMPTY.acquire()
     job("write {}".format(n))
@@ -55,7 +61,6 @@ def writer(n):
 WRITERS = [Thread(target=writer, args=(i,)) for i in range(5)]
 READERS = [Thread(target=reader, args=(i,)) for i in range(10)]
 THREADS = WRITERS + READERS
-random.shuffle(THREADS)
 
 
 for t in THREADS:
