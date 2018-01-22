@@ -2,6 +2,7 @@
 
 import sys
 from threading import Thread, Semaphore
+from watcher import watch
 
 
 class Barrier:
@@ -32,20 +33,20 @@ BARRIER = Barrier(NUM_THREADS)
 
 
 def run(n):
-    num_cycles = 3
-    for i in range(num_cycles):
+    i = 1
+    while True:
         sys.stdout.write('cycle {}: before barrier {}\n'.format(i, n))
         BARRIER.wait()
         sys.stdout.write('cycle {}: between barriers {}\n'.format(i, n))
         BARRIER.wait()
         sys.stdout.write('cycle {}: after barrier {}\n'.format(i, n))
         BARRIER.wait()
+        i += 1
 
 
-THREADS = [Thread(target=run, args=(i,)) for i in range(NUM_THREADS)]
+def main():
+    THREADS = [Thread(target=run, args=(i,)) for i in range(NUM_THREADS)]
+    for t in THREADS:
+        t.start()
 
-for t in THREADS:
-    t.start()
-
-for t in THREADS:
-    t.join()
+watch(main)
