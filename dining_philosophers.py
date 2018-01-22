@@ -2,6 +2,7 @@ import sys
 import time
 import random
 from threading import Thread, Semaphore
+from watcher import watch
 
 def left(i):
     return i
@@ -13,7 +14,7 @@ FORKS = [Semaphore(1) for _ in range(5)]
 MULTIPLEX = Semaphore(4)
 
 def philosopher(i):
-    for _ in range(10):
+    while True:
         # think
         sys.stdout.write("{} thinking...\n".format(i))
         time.sleep(random.random())
@@ -35,10 +36,9 @@ def philosopher(i):
         sys.stdout.write("{} put left fork {}\n".format(i, l))
         MULTIPLEX.release()
 
-PHILOSOPHERS = [Thread(target=philosopher, args=(i,)) for i in range(5)]
+def main():
+    PHILOSOPHERS = [Thread(target=philosopher, args=(i,)) for i in range(5)]
+    for p in PHILOSOPHERS:
+        p.start()
 
-for p in PHILOSOPHERS:
-    p.start()
-
-for p in PHILOSOPHERS:
-    p.join()
+watch(main)

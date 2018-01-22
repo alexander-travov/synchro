@@ -3,6 +3,7 @@ import sys
 import time
 import random
 from threading import Thread, Semaphore
+from watcher import watch
 
 
 class Lightswitch:
@@ -39,32 +40,31 @@ def job(name):
 
 
 def reader(n):
-    time.sleep(5 * random.random())
-    sys.stdout.write('Reader ' + str(n) + ' arrived\n')
-    NO_WRITERS.acquire()
-    ROOM_LIGHTSWITCH.on()
-    NO_WRITERS.release()
-    job("read {}".format(n))
-    ROOM_LIGHTSWITCH.off()
+    while True:
+        time.sleep(5 * random.random())
+        sys.stdout.write('Reader ' + str(n) + ' arrived\n')
+        NO_WRITERS.acquire()
+        ROOM_LIGHTSWITCH.on()
+        NO_WRITERS.release()
+        job("read {}".format(n))
+        ROOM_LIGHTSWITCH.off()
 
 
 def writer(n):
-    time.sleep(5 * random.random())
-    sys.stdout.write('Writer ' + str(n) + ' arrived\n')
-    WRITERS_LIGHTSWITCH.on()
-    ROOM_EMPTY.acquire()
-    job("write {}".format(n))
-    WRITERS_LIGHTSWITCH.off()
-    ROOM_EMPTY.release()
+    while True:
+        time.sleep(5 * random.random())
+        sys.stdout.write('Writer ' + str(n) + ' arrived\n')
+        WRITERS_LIGHTSWITCH.on()
+        ROOM_EMPTY.acquire()
+        job("write {}".format(n))
+        WRITERS_LIGHTSWITCH.off()
+        ROOM_EMPTY.release()
 
 
-WRITERS = [Thread(target=writer, args=(i,)) for i in range(5)]
-READERS = [Thread(target=reader, args=(i,)) for i in range(10)]
-THREADS = WRITERS + READERS
+def main():
+    WRITERS = [Thread(target=writer, args=(i,)) for i in range(5)]
+    READERS = [Thread(target=reader, args=(i,)) for i in range(10)]
+    for t in WRITERS + READERS:
+        t.start()
 
-
-for t in THREADS:
-    t.start()
-
-for t in THREADS:
-    t.join()
+watch(main)
