@@ -2,6 +2,7 @@ import sys
 import time
 import random
 from threading import Thread, Semaphore
+from watcher import watch
 
 
 PORTIONS = POT_CAPACITY = 10
@@ -39,11 +40,9 @@ def cook():
         FULL.release()
     
 
-THREADS = [Thread(target=savage) for _ in range(4)] + [Thread(target=cook)]
+def run():
+    THREADS = [Thread(target=savage) for _ in range(4)] + [Thread(target=cook)]
+    for t in THREADS:
+        t.start()
 
-for t in THREADS:
-    t.deamon = True
-    t.start()
-
-for t in THREADS:
-    t.join()
+watch(run)
