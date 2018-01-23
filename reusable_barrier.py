@@ -49,4 +49,5 @@ def main():
     for t in THREADS:
         t.start()
 
-watch(main)
+if __name__ == '__main__':
+    watch(main)
