@@ -1,31 +1,30 @@
 # Queue problem
 
 import sys
+import time
 import random
-from threading import Thread, Semaphore
+from sync_utils import Thread, Semaphore, watch
 
 LEADERS_QUEUE = Semaphore(0)
 FOLLOWERS_QUEUE = Semaphore(0)
 
 
 def leader():
-    FOLLOWERS_QUEUE.release()
-    LEADERS_QUEUE.acquire()
+    FOLLOWERS_QUEUE.signal()
+    LEADERS_QUEUE.wait()
     sys.stdout.write("Leader dances.\n")
 
 
 def follower():
-    LEADERS_QUEUE.release()
-    FOLLOWERS_QUEUE.acquire()
+    LEADERS_QUEUE.signal()
+    FOLLOWERS_QUEUE.wait()
     sys.stdout.write("Follower dances.\n")
 
 
-N = 20
-THREADS = [Thread(target=leader) for _ in range(N)] + [Thread(target=follower) for _ in range(N)] 
-random.shuffle(THREADS)
+def main():
+    while True:
+        time.sleep(0.25)
+        person = leader if random.randint(0, 1) else follower
+        Thread(person)
 
-for t in THREADS:
-    t.start()
-for t in THREADS:
-    t.join()
-sys.stdout.write("All passed.\n")
+watch(main)
