@@ -1,31 +1,7 @@
 # Reusable Barrier problem
 
 import sys
-from threading import Thread, Semaphore
-from watcher import watch
-
-
-class Barrier:
-    def __init__(self, num_threads):
-        self.num_threads = num_threads
-        self.count = 0
-        self.mutex = Semaphore(1)
-        self.turnstiles = (Semaphore(0), Semaphore(0))
-        self.t = 0 # current active turnstile index
-
-    def wait(self):
-        turnstile = self.turnstiles[self.t]
-
-        self.mutex.acquire()
-        self.count += 1
-        if self.count == self.num_threads:
-            self.count = 0
-            self.t = 1 - self.t # alternate turnstile index
-            for _ in range(self.num_threads):
-                turnstile.release()
-        self.mutex.release()
-
-        turnstile.acquire()
+from sync_utils import Thread, Semaphore, Barrier, watch
 
 
 NUM_THREADS = 5
@@ -45,9 +21,7 @@ def run(n):
 
 
 def main():
-    THREADS = [Thread(target=run, args=(i,)) for i in range(NUM_THREADS)]
-    for t in THREADS:
-        t.start()
+    for i in range(NUM_THREADS):
+        Thread(run, i)
 
-if __name__ == '__main__':
-    watch(main)
+watch(main)
