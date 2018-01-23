@@ -1,7 +1,7 @@
 # Barrier problem
 
 import sys
-from threading import Thread, Semaphore
+from sync_utils import Thread, Semaphore
 
 
 NUM_THREADS = 5
@@ -21,19 +21,15 @@ def run(n):
     COUNT += 1
     if COUNT == NUM_THREADS:
         for _ in range(NUM_THREADS):
-            BARRIER.release()
+            BARRIER.signal()
     MUTEX.release()
 
     # critical point
-    BARRIER.acquire()
+    BARRIER.wait()
 
     sys.stdout.write('after barrier {}\n'.format(n))
 
 
-THREADS = [Thread(target=run, args=(i,)) for i in range(NUM_THREADS)]
-
-for t in THREADS:
-    t.start()
-
+THREADS = [Thread(run, i) for i in range(NUM_THREADS)]
 for t in THREADS:
     t.join()
