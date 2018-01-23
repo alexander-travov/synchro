@@ -1,15 +1,14 @@
 import sys
 import time
 import random
-from threading import Thread, Semaphore
-from watcher import watch
+from sync_utils import Thread, Semaphore, watch
 
 
 NUM_SEATS = 4
 QUEUE = []
 MUTEX = Semaphore(1)
 
-BARBER = Semaphore(0)
+CLIENT = Semaphore(0)
 BARBER_SEAT = Semaphore(0)
 
 CLIENT_DONE = Semaphore(0)
@@ -30,19 +29,19 @@ def client(n):
         QUEUE.append(s)
         MUTEX.release()
         sys.stdout.write("Client {}: Sitting.\n".format(n))
-        BARBER.release() # signaling barber
+        CLIENT.signal()
         s.acquire()
-        BARBER_SEAT.acquire() # waiting for him to get of his chair
+        BARBER_SEAT.acquire()
         # get haircut
         sys.stdout.write("Client {}: Getting haircut.\n".format(n))
-        CLIENT_DONE.release()
-        BARBER_DONE.acquire()
+        CLIENT_DONE.signal()
+        BARBER_DONE.wait()
 
 
 def barber():
     global QUEUE
     while True:
-        BARBER.acquire()
+        CLIENT.wait()
         MUTEX.acquire()
         s = QUEUE.pop(0)
         MUTEX.release()
@@ -51,14 +50,14 @@ def barber():
         # make haircut
         time.sleep(2 * random.random())
         sys.stdout.write("Barber: Making haircut.\n")
-        CLIENT_DONE.acquire()
-        BARBER_DONE.release()
+        CLIENT_DONE.wait()
+        BARBER_DONE.signal()
 
 
 def main():
-    Thread(target=barber).start()
+    Thread(barber)
     while True:
         time.sleep(random.random())
-        Thread(target=client, args=(random.randint(1, 100),)).start()
+        Thread(client, random.randint(1, 100))
 
 watch(main)
