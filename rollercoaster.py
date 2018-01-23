@@ -1,6 +1,6 @@
 import sys
 import time
-from sync_utils import *
+from sync_utils import Thread, Semaphore, Barrier, watch
 
 
 NUM_PASSENGERS = 0
