@@ -1,17 +1,20 @@
 import sys
 import time
 import random
-from threading import Thread, Semaphore
-from watcher import watch
+from sync_utils import Thread, Semaphore, watch
+
 
 def left(i):
     return i
 
+
 def right(i):
     return (i + 1) % 5
 
+
 FORKS = [Semaphore(1) for _ in range(5)]
 MULTIPLEX = Semaphore(4)
+
 
 def philosopher(i):
     while True:
@@ -36,9 +39,9 @@ def philosopher(i):
         sys.stdout.write("{} put left fork {}\n".format(i, l))
         MULTIPLEX.release()
 
+
 def main():
-    PHILOSOPHERS = [Thread(target=philosopher, args=(i,)) for i in range(5)]
-    for p in PHILOSOPHERS:
-        p.start()
+    for i in range(5):
+        Thread(philosopher, i)
 
 watch(main)
