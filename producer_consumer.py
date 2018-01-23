@@ -1,8 +1,7 @@
 import sys
 import random
 import time
-from threading import Thread, Semaphore
-from watcher import watch
+from sync_utils import Thread, Semaphore, watch
 
 
 BUFFER = []
@@ -10,41 +9,39 @@ BUFFER_MAX_SIZE = 5
 
 MUTEX = Semaphore(1)
 QUEUE = Semaphore(0)
-ITEMS = Semaphore(BUFFER_MAX_SIZE)
+SPOTS = Semaphore(BUFFER_MAX_SIZE)
 
 
 def producer(n):
     while True:
         # producing
-        time.sleep(random.random())
-        event = random.randint(1, 1000)
+        time.sleep(random.expovariate(1))
+        data = random.randint(1, 1000)
 
-        ITEMS.acquire()
+        SPOTS.acquire()
         MUTEX.acquire()
-        BUFFER.append(event)
-        sys.stdout.write("P{} added: {}\n".format(n, event))
+        BUFFER.append(data)
+        sys.stdout.write("P{} added: {}\n".format(n, data))
         MUTEX.release()
-        QUEUE.release()
+        QUEUE.signal()
 
 
 def consumer(n):
     while True:
-        QUEUE.acquire()
+        QUEUE.wait()
         MUTEX.acquire()
-        event = BUFFER.pop(0)
-        sys.stdout.write("C{} popped: {}\n".format(n, event))
+        data = BUFFER.pop(0)
+        sys.stdout.write("C{} popped: {}\n".format(n, data))
         MUTEX.release()
-        ITEMS.release()
+        SPOTS.release()
 
         # consuming
-        time.sleep(random.random())
+        time.sleep(random.expovariate(1))
 
 
 def main():
-    PRODUCERS = [Thread(target=producer, args=(i,)) for i in range(10)]
-    CONSUMERS = [Thread(target=consumer, args=(i,)) for i in range(3)]
-    THREADS = PRODUCERS + CONSUMERS
-    for t in THREADS:
-        t.start()
+    for i in range(3):
+        Thread(producer, i)
+        Thread(consumer, i)
 
 watch(main)
