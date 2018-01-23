@@ -1,13 +1,8 @@
 import sys
 import time
 import random
-from threading import Thread, _Semaphore
+from threading import Thread, Semaphore
 from watcher import watch
-
-
-class Semaphore(_Semaphore):
-    wait = _Semaphore.acquire
-    signal = _Semaphore.release
 
 
 SANTA = Semaphore(0)
@@ -30,10 +25,10 @@ def raindeer():
     sys.stdout.write("Deer arrives.\n")
     if NUM_DEERS == 9:
         sys.stdout.write("Deers wake Santa.\n")
-        SANTA.signal()
+        SANTA.release()
     DEER_MUTEX.release()
 
-    SLEDGE.wait()
+    SLEDGE.acquire()
     sys.stdout.write("Deer gets hitched.\n")
     # get hitched
 
@@ -42,14 +37,14 @@ def santa():
     global NUM_DEERS
     global NUM_ELVES
     while True:
-        SANTA.wait()
+        SANTA.acquire()
         DEER_MUTEX.acquire()
         if NUM_DEERS == 9:
             DEER_MUTEX.release()
             # prepare sledge
             sys.stdout.write("Santa prepares sledges.\n")
             for _ in range(9):
-                SLEDGE.signal()
+                SLEDGE.release()
             break
         else:
             DEER_MUTEX.release()
@@ -58,30 +53,30 @@ def santa():
 
         sys.stdout.write("Santa helps elves.\n")
         for _ in range(3):
-            HELP.signal()
+            HELP.release()
 
         ELF_MUTEX.acquire()
         NUM_ELVES = 0
         ELF_MUTEX.release()
 
         for _ in range(3):
-            ELF_MULTIPLEX.signal()
+            ELF_MULTIPLEX.release()
 
 
 def elf():
     global NUM_ELVES
-    ELF_MULTIPLEX.wait()
+    ELF_MULTIPLEX.acquire()
     sys.stdout.write("Elf wants help.\n")
 
     ELF_MUTEX.acquire()
     NUM_ELVES += 1
     if NUM_ELVES == 3:
-        sys.stdout.write("Elf wait Santa.\n")
-        SANTA.signal()
+        sys.stdout.write("Elves wake Santa.\n")
+        SANTA.release()
         ELF_MUTEX.release()
     else:
         ELF_MUTEX.release()
-    HELP.wait()
+    HELP.acquire()
     # get help
     sys.stdout.write("Elf gets help.\n")
 
