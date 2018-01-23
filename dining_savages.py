@@ -1,13 +1,12 @@
 import sys
 import time
 import random
-from threading import Thread, Semaphore
-from watcher import watch
+from sync_utils import Thread, Semaphore, watch
 
 
 PORTIONS = POT_CAPACITY = 10
 MUTEX = Semaphore(1)
-COOK = Semaphore(0)
+EMPTY = Semaphore(0)
 FULL = Semaphore(0)
 
 
@@ -19,9 +18,9 @@ def savage():
         MUTEX.acquire()
         if not PORTIONS:
             # wake up the cook
-            sys.stdout.write("Waking for cook.\n")
-            COOK.release()
-            FULL.acquire()
+            sys.stdout.write("Waking cook.\n")
+            EMPTY.signal()
+            FULL.wait()
             PORTIONS = POT_CAPACITY
         # eat
         PORTIONS -= 1
@@ -35,14 +34,14 @@ def savage():
 
 def cook():
     while True:
-        COOK.acquire()
+        EMPTY.wait()
         sys.stdout.write("Cooking.\n")
-        FULL.release()
+        FULL.signal()
     
 
-def run():
-    THREADS = [Thread(target=savage) for _ in range(4)] + [Thread(target=cook)]
-    for t in THREADS:
-        t.start()
+def main():
+    Thread(cook)
+    for _ in range(4):
+        Thread(target=savage)
 
-watch(run)
+watch(main)
