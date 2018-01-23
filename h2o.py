@@ -1,9 +1,7 @@
 import sys
 import time
 import random
-from threading import Thread, Semaphore
-from reusable_barrier import Barrier
-from watcher import watch
+from sync_utils import Thread, Semaphore, Barrier, watch
 
 
 H = 0
@@ -21,9 +19,9 @@ def try_fuse():
         H -= 2
         O -= 1
         sys.stdout.write("Fuse start.\n")
-        FUSE_H.release()
-        FUSE_H.release()
-        FUSE_O.release()
+        FUSE_H.signal()
+        FUSE_H.signal()
+        FUSE_O.signal()
     else:
         MUTEX.release()
 
@@ -35,7 +33,7 @@ def hydrogen():
     H += 1
     sys.stdout.write("H arrived. H:{} O:{}\n".format(H, O))
     try_fuse()
-    FUSE_H.acquire()
+    FUSE_H.wait()
     sys.stdout.write("H fusing.\n")
     FUSE_BARRIER.wait()
 
@@ -47,7 +45,7 @@ def oxygen():
     O += 1
     sys.stdout.write("O arrived. H:{} O:{}\n".format(H, O))
     try_fuse()
-    FUSE_O.acquire()
+    FUSE_O.wait()
     sys.stdout.write("O fusing.\n")
     FUSE_BARRIER.wait()
     MUTEX.release()
@@ -57,6 +55,6 @@ def main():
     while True:
         time.sleep(0.25)
         atom = oxygen if random.randint(1, 3) == 1 else hydrogen
-        Thread(target=atom).start()
+        Thread(atom)
 
 watch(main)
