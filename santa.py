@@ -1,8 +1,7 @@
 import sys
 import time
 import random
-from threading import Thread, Semaphore
-from watcher import watch
+from sync_utils import Thread, Semaphore, Barrier, watch
 
 
 SANTA = Semaphore(0)
@@ -10,6 +9,8 @@ SANTA = Semaphore(0)
 NUM_DEERS = 0
 DEER_MUTEX = Semaphore(1)
 SLEDGE = Semaphore(0)
+SLEDGE_READY = Semaphore(0)
+BARRIER = Barrier(9)
 
 NUM_ELVES = 0
 ELF_MUTEX = Semaphore(1)
@@ -19,33 +20,42 @@ HELP = Semaphore(0)
 
 def raindeer():
     global NUM_DEERS
-    time.sleep(5 + 3*random.random())
-    DEER_MUTEX.acquire()
-    NUM_DEERS += 1
-    sys.stdout.write("Deer arrives.\n")
-    if NUM_DEERS == 9:
-        sys.stdout.write("Deers wake Santa.\n")
-        SANTA.release()
-    DEER_MUTEX.release()
+    while True:
+        time.sleep(5 + 3*random.random())
+        rudolf = False
+        DEER_MUTEX.acquire()
+        NUM_DEERS += 1
+        sys.stdout.write("Deer arrives.\n")
+        if NUM_DEERS == 9:
+            rudolf = True
+            sys.stdout.write("Deers wake Santa.\n")
+            SANTA.signal()
+        DEER_MUTEX.release()
 
-    SLEDGE.acquire()
-    sys.stdout.write("Deer gets hitched.\n")
-    # get hitched
+        SLEDGE.wait()
+        sys.stdout.write("Deer gets hitched.\n")
+        BARRIER.wait()
+        if rudolf:
+            SLEDGE_READY.signal()
+
 
 
 def santa():
     global NUM_DEERS
     global NUM_ELVES
     while True:
-        SANTA.acquire()
+        SANTA.wait()
         DEER_MUTEX.acquire()
         if NUM_DEERS == 9:
+            NUM_DEERS = 0
             DEER_MUTEX.release()
             # prepare sledge
             sys.stdout.write("Santa prepares sledges.\n")
             for _ in range(9):
                 SLEDGE.release()
-            break
+            SLEDGE_READY.wait()
+            sys.stdout.write("Ho-ho-ho.\n")
+            continue
         else:
             DEER_MUTEX.release()
 
@@ -53,7 +63,7 @@ def santa():
 
         sys.stdout.write("Santa helps elves.\n")
         for _ in range(3):
-            HELP.release()
+            HELP.signal()
 
         ELF_MUTEX.acquire()
         NUM_ELVES = 0
@@ -72,21 +82,21 @@ def elf():
     NUM_ELVES += 1
     if NUM_ELVES == 3:
         sys.stdout.write("Elves wake Santa.\n")
-        SANTA.release()
+        SANTA.signal()
         ELF_MUTEX.release()
     else:
         ELF_MUTEX.release()
-    HELP.acquire()
+    HELP.wait()
     # get help
     sys.stdout.write("Elf gets help.\n")
 
 
 def main():
-    THREADS = [Thread(target=raindeer) for _ in range(9)] + [Thread(target=santa)]
-    for t in THREADS:
-        t.start()
+    Thread(target=santa)
+    for i in range(9):
+        Thread(raindeer)
     while True:
         time.sleep(random.random())
-        Thread(target=elf).start()
+        Thread(elf)
 
 watch(main)
