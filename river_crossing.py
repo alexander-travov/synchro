@@ -1,9 +1,8 @@
 import sys
 import time
 import random
-from threading import Thread, Semaphore
-from watcher import watch
-from reusable_barrier import Barrier
+from sync_utils import Thread, Semaphore, Barrier, watch
+
 
 H = 0
 S = 0
@@ -25,21 +24,19 @@ def hacker():
     if H == 4:
         is_captain = True
         H -= 4
-        HACKER_QUEUE.release()
-        HACKER_QUEUE.release()
-        HACKER_QUEUE.release()
-        HACKER_QUEUE.release()
+        for _ in range(4):
+            HACKER_QUEUE.signal()
     elif H == 2 and S >= 2:
         is_captain = True
         H -= 2
         S -= 2
-        HACKER_QUEUE.release()
-        HACKER_QUEUE.release()
-        SERF_QUEUE.release()
-        SERF_QUEUE.release()
+        for _ in range(2):
+            HACKER_QUEUE.signal()
+            SERF_QUEUE.signal()
     else:
         MUTEX.release()
-    HACKER_QUEUE.acquire()
+
+    HACKER_QUEUE.wait()
     sys.stdout.write("Hacker gets on board.\n")
     BARRIER.wait()
     if is_captain:
@@ -57,21 +54,18 @@ def serf():
     if S == 4:
         is_captain = True
         S -= 4
-        SERF_QUEUE.release()
-        SERF_QUEUE.release()
-        SERF_QUEUE.release()
-        SERF_QUEUE.release()
+        for _ in range(4):
+            SERF_QUEUE.signal()
     elif S == 2 and H >= 2:
         is_captain = True
         S -= 2
         H -= 2
-        SERF_QUEUE.release()
-        SERF_QUEUE.release()
-        HACKER_QUEUE.release()
-        HACKER_QUEUE.release()
+        for _ in range(2):
+            SERF_QUEUE.signal()
+            HACKER_QUEUE.signal()
     else:
         MUTEX.release()
-    SERF_QUEUE.acquire()
+    SERF_QUEUE.wait()
     sys.stdout.write("Serf gets on board.\n")
     BARRIER.wait()
     if is_captain:
@@ -83,6 +77,6 @@ def main():
     while True:
         time.sleep(0.1)
         person = hacker if random.randint(0, 1) else serf
-        Thread(target=person).start()
+        Thread(person)
 
 watch(main)
