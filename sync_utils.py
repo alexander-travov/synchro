@@ -21,6 +21,27 @@ class Thread(threading.Thread):
         self.start()
 
 
+class Lightswitch:
+    def __init__(self, semaphore):
+        self.n = 0
+        self.mutex = Semaphore(1)
+        self.semaphore = semaphore
+
+    def on(self):
+        self.mutex.acquire()
+        self.n += 1
+        if self.n == 1:
+            self.semaphore.acquire()
+        self.mutex.release()
+
+    def off(self):
+        self.mutex.acquire()
+        self.n -= 1
+        if self.n == 0:
+            self.semaphore.release()
+        self.mutex.release()
+
+
 class Barrier:
     def __init__(self, num_threads):
         self.num_threads = num_threads
