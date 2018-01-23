@@ -14,15 +14,18 @@ FUSE_O = Semaphore(0)
 FUSE_BARRIER = Barrier(3)
 
 
-def fuse():
+def try_fuse():
     global H
     global O
-    H -= 2
-    O -= 1
-    sys.stdout.write("Fuse start.\n")
-    FUSE_H.release()
-    FUSE_H.release()
-    FUSE_O.release()
+    if H >= 2 and O >= 1:
+        H -= 2
+        O -= 1
+        sys.stdout.write("Fuse start.\n")
+        FUSE_H.release()
+        FUSE_H.release()
+        FUSE_O.release()
+    else:
+        MUTEX.release()
 
 
 def hydrogen():
@@ -31,11 +34,7 @@ def hydrogen():
     MUTEX.acquire()
     H += 1
     sys.stdout.write("H arrived. H:{} O:{}\n".format(H, O))
-    if H >= 2 and O >= 1:
-        fuse()
-    else:
-        MUTEX.release()
-
+    try_fuse()
     FUSE_H.acquire()
     sys.stdout.write("H fusing.\n")
     FUSE_BARRIER.wait()
@@ -47,10 +46,7 @@ def oxygen():
     MUTEX.acquire()
     O += 1
     sys.stdout.write("O arrived. H:{} O:{}\n".format(H, O))
-    if H >= 2 and O >= 1:
-        fuse()
-    else:
-        MUTEX.release()
+    try_fuse()
     FUSE_O.acquire()
     sys.stdout.write("O fusing.\n")
     FUSE_BARRIER.wait()
