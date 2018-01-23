@@ -1,8 +1,8 @@
-# Exclusive Queue problem
-
 import sys
+import time
 import random
-from threading import Thread, Semaphore
+from sync_utils import Thread, Semaphore, watch
+
 
 NUM_LEADERS = 0
 NUM_FOLLOWERS = 0
@@ -14,6 +14,8 @@ RENDEZVOUS = Semaphore(0)
 
 
 def print_queue():
+    global NUM_LEADERS
+    global NUM_FOLLOWERS
     sys.stdout.write("\tL: {} F: {}\n".format(NUM_LEADERS, NUM_FOLLOWERS))
 
 
@@ -27,16 +29,16 @@ def leader():
         NUM_FOLLOWERS -= 1
         sys.stdout.write(" Pair passes.")
         print_queue()
-        FOLLOWERS_QUEUE.release()
+        FOLLOWERS_QUEUE.signal()
     else:
         NUM_LEADERS += 1
         sys.stdout.write(" Waiting.")
         print_queue()
         MUTEX.release()
-        LEADERS_QUEUE.acquire()
+        LEADERS_QUEUE.wait()
 
     sys.stdout.write("Leader dances.\n")
-    RENDEZVOUS.acquire()
+    RENDEZVOUS.wait()
     MUTEX.release()
 
 
@@ -51,24 +53,22 @@ def follower():
         NUM_LEADERS -= 1
         sys.stdout.write(" Pair passes.")
         print_queue()
-        LEADERS_QUEUE.release()
+        LEADERS_QUEUE.signal()
     else:
         NUM_FOLLOWERS += 1
         sys.stdout.write(" Waiting.")
         print_queue()
         MUTEX.release()
-        FOLLOWERS_QUEUE.acquire()
+        FOLLOWERS_QUEUE.wait()
 
     sys.stdout.write("Follower dances.\n")
-    RENDEZVOUS.release()
+    RENDEZVOUS.signal()
 
 
-N = 20
-THREADS = [Thread(target=leader) for _ in range(N)] + [Thread(target=follower) for _ in range(N)] 
-random.shuffle(THREADS)
+def main():
+    while True:
+        time.sleep(0.25)
+        person = leader if random.randint(0, 1) else follower
+        Thread(person)
 
-for t in THREADS:
-    t.start()
-for t in THREADS:
-    t.join()
-sys.stdout.write("All passed.\n")
+watch(main)
