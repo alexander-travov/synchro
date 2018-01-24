@@ -11,8 +11,13 @@ else:
 
 
 class Semaphore(_Semaphore):
+    def release(self, n=1):
+        for _ in range(n):
+            _Semaphore.release(self)
+
+    signal = release
     wait = _Semaphore.acquire
-    signal = _Semaphore.release
+
 
 
 class Thread(threading.Thread):
@@ -58,8 +63,7 @@ class Barrier:
         if self.count == self.num_threads:
             self.count = 0
             self.t = 1 - self.t # alternate turnstile index
-            for _ in range(self.num_threads):
-                turnstile.release()
+            turnstile.release(self.num_threads)
         self.mutex.release()
 
         turnstile.acquire()

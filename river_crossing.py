@@ -24,15 +24,13 @@ def hacker():
     if H == 4:
         is_captain = True
         H -= 4
-        for _ in range(4):
-            HACKER_QUEUE.signal()
+        HACKER_QUEUE.signal(4)
     elif H == 2 and S >= 2:
         is_captain = True
         H -= 2
         S -= 2
-        for _ in range(2):
-            HACKER_QUEUE.signal()
-            SERF_QUEUE.signal()
+        HACKER_QUEUE.signal(2)
+        SERF_QUEUE.signal(2)
     else:
         MUTEX.release()
 
@@ -54,15 +52,13 @@ def serf():
     if S == 4:
         is_captain = True
         S -= 4
-        for _ in range(4):
-            SERF_QUEUE.signal()
+        SERF_QUEUE.signal(4)
     elif S == 2 and H >= 2:
         is_captain = True
         S -= 2
         H -= 2
-        for _ in range(2):
-            SERF_QUEUE.signal()
-            HACKER_QUEUE.signal()
+        SERF_QUEUE.signal(2)
+        HACKER_QUEUE.signal(2)
     else:
         MUTEX.release()
     SERF_QUEUE.wait()

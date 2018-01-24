@@ -58,8 +58,8 @@ def visitor():
         PARTY = EATING == MAX_EATING
         if PARTY:
             sys.stdout.write("Party starts.\n")
-        for _ in range(n):
-            PARTY_QUEUE.signal()
+        if n:
+            PARTY_QUEUE.signal(n)
     MUTEX.release()
 
 

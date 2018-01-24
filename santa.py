@@ -51,8 +51,7 @@ def santa():
             DEER_MUTEX.release()
             # prepare sledge
             sys.stdout.write("Santa prepares sledges.\n")
-            for _ in range(9):
-                SLEDGE.release()
+            SLEDGE.release(9)
             SLEDGE_READY.wait()
             sys.stdout.write("Ho-ho-ho.\n")
             continue
@@ -62,15 +61,13 @@ def santa():
         # help elves
 
         sys.stdout.write("Santa helps elves.\n")
-        for _ in range(3):
-            HELP.signal()
+        HELP.signal(3)
 
         ELF_MUTEX.acquire()
         NUM_ELVES = 0
         ELF_MUTEX.release()
 
-        for _ in range(3):
-            ELF_MULTIPLEX.release()
+        ELF_MULTIPLEX.release(3)
 
 
 def elf():

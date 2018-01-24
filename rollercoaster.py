@@ -41,13 +41,11 @@ def passenger():
 def car():
     while True:
         sys.stdout.write("Car starts loading.\n")
-        for _ in range(CAR_CAPACITY):
-            BOARD_QUEUE.signal()
+        BOARD_QUEUE.signal(CAR_CAPACITY)
         ALL_ON_BOARD.wait()
         sys.stdout.write("Car runs.\n")
         sys.stdout.write("Car starts unloading.\n")
-        for _ in range(CAR_CAPACITY):
-            UNBOARD_QUEUE.signal()
+        UNBOARD_QUEUE.signal(CAR_CAPACITY)
         ALL_OFF_BOARD.wait()
 
 
