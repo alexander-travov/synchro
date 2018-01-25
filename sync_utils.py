@@ -19,7 +19,6 @@ class Semaphore(_Semaphore):
     wait = _Semaphore.acquire
 
 
-
 class Thread(threading.Thread):
     def __init__(self, target, *args):
         threading.Thread.__init__(self, target=target, args=args)
